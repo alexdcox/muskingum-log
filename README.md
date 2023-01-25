@@ -12,9 +12,7 @@ Sunday    18.09.2022 10h
 Monday    19.09.2022  8h
 Tuesday   20.09.2022  8h
 Wednesday 21.09.2022  6h
-Monday    03.10.2022  8h
-Tuesday   04.10.2022  1h
-Total                79h
+Total                70h
 ```
 
 ### Tuesday 13.09.2022 8h
@@ -258,7 +256,34 @@ It really doesn't seem worth it.
 Just to make a line spin requires a ridiculous amount of code.
 If I'm going to actually get anywhere, might be a better idea to just learn Unity.
 
-### Monday 03.10.2022 8h
+## Batch Two
+
+```
+03.10.2022 Monday      8h
+04.10.2022 Tuesday     1h
+10.10.2022 Monday      4h
+11.10.2022 Tuesday     8h
+12.10.2022 Wednesday   6h
+13.10.2022 Thursday    6h
+14.10.2022 Friday      6h
+17.10.2022 Monday      6h
+18.10.2022 Tuesday     1h
+26.10.2022 Wednesday   4h 30m
+27.10.2022 Thursday    6h
+28.10.2022 Friday      6h
+01.11.2022 Tuesday     6h
+02.11.2022 Wednesday   6h
+04.11.2022 Friday      6h
+09.11.2022 Wednesday   6h
+10.11.2022 Thursday    7h
+11.11.2022 Friday      6h
+14.11.2022 Monday      6h
+16.11.2022 Wednesday   6h
+18.11.2022 Friday      8h
+Total                119h 30m
+```
+
+### 03.10.2022 Monday 8h
 
 I'm going to have to learn Unity to make this work.
 Here goes...
@@ -293,36 +318,12 @@ https://www.youtube.com/c/HovlStudio/videos
 URP
 Universal Render Pipeline
 
-### Tuesday 04.10.2022 1h
+### 04.10.2022 Tuesday 1h
 
 [Brackeys - Shader Graph Force Field](https://www.youtube.com/watch?v=NiOGWZXBg4Y)
 
 [Brackeys - 2D Outline](https://www.youtube.com/watch?v=MqpyXhBIRSw)
 
-## Batch Two
-
-```
-10.10.2022 Monday      4h
-11.10.2022 Tuesday     8h
-12.10.2022 Wednesday   6h
-13.10.2022 Thursday    6h
-14.10.2022 Friday      6h
-17.10.2022 Monday      6h
-18.10.2022 Tuesday     1h
-26.10.2022 Wednesday   4h 30m
-27.10.2022 Thursday    6h
-28.10.2022 Friday      6h
-01.11.2022 Tuesday     6h
-02.11.2022 Wednesday   6h
-04.11.2022 Friday      6h
-09.11.2022 Wednesday   6h
-10.11.2022 Thursday    7h
-11.11.2022 Friday      6h
-14.11.2022 Monday      6h
-16.11.2022 Wednesday   6h
-18.11.2022 Friday      8h
-Total                110h 30m
-```
 
 ### 10.10.2022 Monday 4h
 
@@ -1267,6 +1268,752 @@ Although couching wouldn't work with cards/hands which are supposed to be hidden
 There's the card art and animations to tackle as well.
 
 
+## Batch Three
+
+```
+22.11.2022 Tuesday    3h
+24.11.2022 Thursday   5h
+25.11.2022 Friday     3h
+16.01.2023 Monday     6h
+17.01.2023 Tuesday    6h
+18.01.2023 Wednesday  6h
+19.01.2023 Thursday   6h
+20.01.2023 Friday     6h
+23.01.2023 Monday     7h
+24.01.2023 Tuesday    4h
+Total                52h
+```
+
+### 22.11.2022 Tuesday 3h
+
+Notes from dickos card game:
+```c#
+[Header("Something")]
+```
+
+```c#
+[Command]
+public void CmdDrawFromDeck() {
+  hand.Add(deck[0]);
+  deck.RemoveAt(0);
+}
+```
+
+```c#
+card.animations.CardDraw();
+```
+
+He mentions `SyncList`
+
+When he drops his prefabs into the hierarchy group they are automatically sized and placed in the correct place.  
+I reckon the sizing just comes from camera distance, so essentially just placing the groups.
+
+This is in `CardManager.CmdPlayCard`:
+
+```c#
+NetworkServer.Spawn(card);
+...
+if (isServer) RpcPlayCard(unitInfo, index, gridId, unit.isHero, unit.isTaunt)
+```
+
+`RpcPlayCard` is called on all the clients and:
+```c#
+[ClientRpc]
+public void RpcPlayCard(unitInfo, index, gridId, unit.isHero, unit.isTaunt) {
+  unitInfo.unit.transform.SetParent(Player.gameManager.grid[gridId].content, false)
+  unitInfo.unit.animations.UnitSummon();
+  
+  if (isSpawning) {
+    unitInfo.unit.allegiance = Target.FRIENDLIES;
+    if (hero) unitInfo.unit.crown.color = player.ownerColor;
+    Player.gameManager.playerHand.RemoveCard(index);
+    isSpawning = false;
+  } else {
+    unitInfo.unit.allegiance = Target.ENEMIES;
+    unitInfo.unit.teamColor = player.ownerColor;
+    // etc etc etc
+  }
+}
+```
+
+Here's an example within `UnitAnimations:UnitSummon`
+```c#
+[Client]
+public void UnitSummon() {
+  unit.transform.localScale = new Vector3(0, 0, 0);
+  canvas.sortingOrder = 3;
+  unit.transform.localPosition = new Vector3(0, 500, -250);
+  
+  unit.transform.DOLocalMove(Vector3.zero, 0.6f).SetEase(Ease.OutBounce).OnComplete(ResetSortingOrder);
+  unit.transform.localScale = new Vector3(0.68f, 0.68f, 1);
+}
+```
+
+- UnitMouseEvents
+- TileMouseEvents
+- UnitAminations
+- CardAnimations
+
+https://www.bellingo.de/blog/devblog-avoiding-unity-netcode/
+
+He used Mirror. There's also Netcode.  
+What do I use?
+
+That guy uses Mirror and Telepathy.
+
+https://www.reddit.com/r/Unity3D/comments/u61bw6/state_of_multiplayer_in_unity_2022/
+
+FishNet seems mentioned a lot lately.  
+Microsoft Azure Playfab? (probably not)  
+PUN  
+Fusion > PUN  
+Photon  
+
+> FishNet does offer more features and massively outperforms Mirror as well
+
+> If you're really serious about this start by making simple networked apps like a chat room, then move over to a udp chatroom with reliability and ordering. Once you can do that, build a turn based game (like a card game), then finally you'd be ready for a real time one (like online pong). After doing that you'll likely have enough knowledge to know the next steps yourself on how to do the things you want to do.
+
+This seems like good advice.  
+Perhaps it would save time to just dive in though.
+
+> If you are just starting out building multiplayer games use Fish-Networking or Fusion for your first few games and worry about server hosting, analytics and live game stuff later.
+
+I'm going with fish net.  
+Perhaps I can structure things to be able to switch out if necessary.
+
+https://fish-networking.gitbook.io/docs/  
+https://assetstore.unity.com/packages/tools/network/fish-net-networking-evolved-207815
+
+Going through the Fish docs...
+
+> Multipass is a pass-through transport that allows multiple transports to run on the server at once. For example, you may want to run Tugboat for your desktop or mobile users, and Bayou for your web users. With Multipass a single server build can run both, joining players from both together in the same game.
+
+There are two caveats mentioned:
+- Networked Scene Objects
+  Can't move between scenes. But instantiated objects can. Why can't you just convert between? If the client can do it with it's own object, can't you transfer ownership to the client and then back to the server with the new scene? Don't understand enough to process that yet.
+- Nested NetworkObjects and NetworkBehaviours
+  Something about nested objects HAVING to be deleted when the parent does. Don't think that's anything to worry about.
+  
+> If you are using anything else, you may run into issues so consider switching to 2021 LTS.
+
+Argh. First hurdle already.  
+I think I'll try unity game objects. I just want to use what I'm using without having restriction.
+
+The unity thingy was only release a few months back, so at least it will work with my current project. I have pretty straight-forward requirements and I can haldle a little network code if I actually need to.
+
+I'll do a quick tick-tack-toe game.
+
+Oh FFS:
+> You may encounter bugs and issues while using Netcode on WebGL, and we will not prioritize fixing those issues.
+
+That's great. Just... great. Back to Fishes.
+
+I'm pretty burnt out for today going to call it here.
+
+### 24.11.2022 Thursday 5h
+
+Back to networking.
+
+The first fishy example is far from a press play and go.  
+It comes with a pdf guide, and I have a lot of gripes with it.  
+Firstly, there are all these scenes in the project:  
+
+```
+./Assets/FishNet/Example/All/Prediction/Rigidbody/RigidbodyPrediction.unity
+./Assets/FishNet/Example/All/Prediction/Transform/TransformPrediction.unity
+./Assets/FishNet/Example/All/Prediction/CharacterController/CharacterControllerPrediction.unity
+./Assets/FishNet/Example/All/SceneManager/Scenes/Additive/AdditiveGlobal.unity
+./Assets/FishNet/Example/All/SceneManager/Scenes/Additive/AdditiveMain.unity
+./Assets/FishNet/Example/All/SceneManager/Scenes/Additive/AdditiveConnection.unity
+./Assets/FishNet/Example/All/SceneManager/Scenes/Replace/ReplaceGlobal.unity
+./Assets/FishNet/Example/All/SceneManager/Scenes/Replace/ReplaceMain.unity
+./Assets/FishNet/Example/All/SceneManager/Scenes/Replace/ReplaceConnection.unity
+./Assets/FishNet/Example/All/Authenticator/Authenticator.unity
+./Assets/FN_WSS_Example/Scenes/FN_WSS_Example_Scene.unity
+```
+
+It looks like there are three examples, prediction, scenemanager and authenticator right?  
+Or perhaps they're all included with `FN_WSS_Example_Scene.unity`?
+
+Bit unclear there.  
+I'll try building the FN_WSS_Example_Scene.unity as a dedicated server and see...
+
+Ok wait I have more questions.  
+Looks like I need to configure `Tugboat` and `Bayou` in the `NetworkManager`.  
+The guide is only focused on setting up a server with DigitalOcean.  
+Why can't I have a fully working out-the-box automated one-liner local demo command?!  
+Perhaps docker compose? Automatically targets my platform, starts both a server and a client.  
+With instructions on the scene that opens.  
+That's all I ever want, I don't think it's much to ask.  
+
+*sigh*
+
+Okay to the docs:
+
+Multipass?
+> Multipass is a pass-through transport that allows multiple transports to run on the server at once.
+
+Yak?
+> An offline transport that runs off your multiplayer code. No local or remote connections are made using this transport.
+
+So... if I suppose 1 player mode I'd want to use Yak to allow the client to act as the host for itself?
+
+Bayou?
+> A WebGL transport utilizing an updated SimpleWebTransport.
+
+Tugboat?
+>  Tugboat uses LiteNetLib to support reliable and unreliable messages. This is the default transport for Fish-Networking.
+
+Tugboat port is `7770`.  
+Bayou port is `7771`.  
+
+Why is there a client address input box for the tugboat script?  
+Apparently that is the server address.  
+> Set its client address to your droplet's IP (optionally, for local testing leave it as "localhost").
+I'll change that then.
+
+Bayou has a client address `gooby.xyz`. Interesting that wasn't set to the same as the tugboat address.
+
+Oh dear:
+> ERROR: Shader UI/Default shader is not supported on this GPU (none of subshaders/fallbacks are suitable)
+
+![](/uploads/3ddb2bad-dbec-4efc-99d9-9b13f34efe91.png)
+
+Ignored the shader issues and got it working. Going to look over the code...
+
+Okay going to start bringing things in...
+
+- Download and import Fish-Net from the asset store
+- Close and re-open project (had to do this due to dll include issues, still getting some errors)
+- Add new gameobject NetworkManager with the script of the same name
+- `Create Asset > FishNet > Logging > Configuration` and assign to NetworkManager.
+
+```
+Local server is starting for Tugboat.
+Local server is started for Tugboat.
+```
+
+This is happening automatically and I'm not sure I want that.  
+What if I don't want to create a server? It happens before I've clicked Host.  
+Is there an option for not automatically doing that?  
+
+Gripes with FishNet:
+- Ports are opened automatically without me asking.
+
+`TransportManager:InitializeOnceInternal` I think this is the culprit. It sets up tugboat as the default transport if there isn't one and calls `Transport.Initialize`.
+
+NetworkManager  
+gets a TransportManager  
+NetworkManager eventually calls TransportManager.InitializeOnceInternal  
+
+### 25.11.2022 Friday 3h
+
+Here's the call stack:
+
+```
+FishNet.Transporting.Tugboat.Tugboat:StartConnection (bool) (at Assets/FishNet/Runtime/Transporting/Transports/Tugboat/Tugboat.cs:384)
+FishNet.Managing.Server.ServerManager:StartConnection () (at Assets/FishNet/Runtime/Managing/Server/ServerManager.cs:268)
+FishNet.Managing.Server.ServerManager:StartForHeadless () (at Assets/FishNet/Runtime/Managing/Server/ServerManager.cs:210)
+```
+
+```
+#if UNITY_SERVER
+```
+
+I hav a feeling this is "yes true I am a server".
+
+```
+Debug.Log("Am I a server? " + UNITY_SERVER);
+```
+
+Not like this!
+
+```
+                var testtesttestserver = false;
+#if UNITY_SERVER
+                testtesttestserver = true;
+#endif
+                Debug.Log("Am I a server? " + testtesttestserver);
+```
+
+I went into `Project Settigns > Player > Resolution` and set it to windowed, also added `Full` logging in other settings. That way you can just open the binary from the terminal and see the logs from the client.
+
+`~/Library/Logs/Unity/Player.log` not found.
+
+```
+./Build/client.app/Contents/MacOS/NetcodeGameobjects
+ps -ae | grep NetcodeGameobjects
+lsof -p 84481 | grep log
+```
+
+It's actually in `~/Library/Logs/DefaultCompany/NetcodeGameobjects/Player.log`.
+
+This removes the stack traces and empty lines.
+```
+tail -n +1 -F ~/Library/Logs/DefaultCompany/NetcodeGameobjects/Player.log | egrep -v '^$| #'
+```
+
+The problem with this is, if I have two game instances open only the last instance can write to the log file.
+
+Might want to look up redirecting logging to stdout.
+
+```
+./Build/client.app/Contents/MacOS/NetcodeGameobjects -logFile
+```
+Doesn't work.
+
+```
+Application.logMessageReceivedThreaded 
+```
+
+No code examples and no obvious way to change things in the docs other than changing the company name.
+
+Great. Moving on.
+
+Next challenge: when both are connected, switch to the game scene.
+
+Not getting "go to definition" support which is making things difficult. Found this in the logs:
+
+> Error: This project targets .NET version that requires reference assemblies that are not installed (e.g. .NET Framework). The most common solution is to make sure Mono is fully updated on your machine (https://mono-project.com/download/) and that you are running the .NET Framework build of OmniSharp (e.g. 'omnisharp.useModernNet': false in C# Extension for VS Code).
+
+```
+mono --version
+Mono JIT compiler version 6.12.0.162 (2020-02/2ca650f1f62 Tue Nov 30 10:18:09 EST 2021)
+Copyright (C) 2002-2014 Novell, Inc, Xamarin Inc and Contributors. www.mono-project.com
+  TLS:
+  SIGSEGV:       altstack
+  Notification:  kqueue
+  Architecture:  amd64
+  Disabled:      none
+  Misc:          softdebug
+  Interpreter:   yes
+  LLVM:          yes(610)
+  Suspend:       hybrid
+  GC:            sgen (concurrent by default)
+```
+
+Already have the latest.  
+Installing .NET 6.0 SDK (v6.0.403) - macOS Arm64 from Microsoft.
+
+### 16.01.2023 Monday 6h
+
+And we're back, baby! S'been a while.
+
+Current aim: get this thing playable, multiplayer, with external server.
+
+Ideally the would be 3 options:
+- matchmaking (requires external server)
+- host
+- direct join
+
+Couch-co-op would also be an interesting option.
+
+Currently the actual game logic is written in JS using websockets as the network protocol.  
+I was in the process of porting it, and I got so far.  
+Then I had a call with Ash and his Unity dev friend Patryk, who said there shouldn't be an issue just connecting unity/c# to the js backend I already have (with the warning he's not a network engineer)  
+The easiest way to support the above 3 would be to allow the game to run as a unity dedicated server and have all the logic in c#.  
+
+At this point, it's a judgement call on what what be the quickest/easiest/best.
+
+Time to update all the things I need for development again.  
+Docker, brew, xcode, iterm, goland, osx  
+Gotta love the pace of development.  
+
+Gunna try this out:  
+https://github.com/endel/NativeWebSocket.git#upm
+
+Threw together a very simple UI menu set in Figma so I have something to work from. Kyria is the first part of the greek word for domination, just wanted something better than HexGame for now. You might not be able to see against the white of this page, but there's a subtle hex pattern as a full screen backdrop. I like it. The name input will probably be the hardest part of this UI, everything else is just text (and deliberately so) In fact I'll just ditch that screen entirely for the first iteration of this, along with the settings page.
+
+![](/uploads/0df79550-d47d-4840-a664-48d26bda5e44.jpg)
+
+Was wondering if I should use a square which tesselates to achieve the background or to do it with code. Doing it with code would allow for animating tiles in/out randomly which would give it something extra.
+
+Ah also need a victory screen!
+
+Fill strategy:
+- start top left and carry on bottom right direction until off screen
+- drop one tile from top left and repeat until bottom left of the screen is done
+- for top-left we need a slightly different pattern
+
+Scratch that I think there's an easier way...
+
+```c#
+for (int q = 0; q < 8; q++) {
+  currentHex = Hex.Axial(q, 0);
+  currentDirectionIndex = 0;
+  for (int r = -8; r < 8; r++) {
+    if (IsHexVisible(currentHex)) {
+      DrawHex(currentHex);
+    }
+    currentHex = currentHex.Neighbor(directionPattern[currentDirectionIndex]);
+    currentDirectionIndex = (currentDirectionIndex + 1) % 5;
+    infiniteLoopEscaper++;
+    if (infiniteLoopEscaper > infiniteEscapeAt) {
+      return;
+    }
+  }
+}
+```
+
+Well I've got the background drawn but it's mahousive.  
+A tomorrow problem...
+
+### 17.01.2023 Tuesday 6h
+
+This is what I'm working with:
+
+![](/uploads/b4da6594-9be9-4ed9-99dc-daed23f0b075.png)
+
+Another global / local coordinate issue? (can barely remember what that was about)
+
+![](/uploads/a909213d-b037-4e57-9c54-1c16599a44cb.png)
+
+This... now this is what I wanted!  
+On with the text...  
+
+My designs are using the Inter google font.  
+How to import again?  
+
+![](/uploads/35b75f66-cf6a-4a7e-88ea-d43f04324c94.png)
+
+I want to allow selecting a callback with the first parameter being the menu screen to switch to.  
+I can assign the function using `UnityEvent`s, but it doesn't let me select from the enum.
+
+![](/uploads/d14cdd76-0396-4a8f-9ad8-e11ad236005e.png)
+
+So apparently unity doesn't let you use enums in events.  
+It does however, let you use serializable classes.  
+So you can create a class with an enum, add that as a component with the enum value selected, then drag that into the event to pass the entire class statically to the callback.  
+The downside is that it just shows up as the component name in the editor, so you can't see which one is assigned to which exactly, but it's pretty obvious. Neat.
+
+![](/uploads/c589ad80-37a5-4705-98b7-f83241d85582.png)
+
+So I have menu navigation working except join/host because I can't reuse the menu component I created.  
+They both start off with some other component being selected.
+
+Actually was in the process of adding the ability to disable a menu item.
+
+Go from there tomoz...
+
+### 18.01.2023 Wednesday 6h
+
+Trying to deserialise a json response with c#.
+
+> ArgumentException: JSON must represent an object type.
+
+SO users mention Newtonsoft. Unity doesn't support json arrays. What century are we in here?  
+Ah I've already used it once. Nice.  
+Going to skip join/host and go with a "quick join" which is just a FIFO matchmaking queue.  
+Not as nice, but saves time with ui for MVP.  
+Back to endel/NativeWebSocket...  
+
+nodejs is completely broken, can't run server
+
+> dyld[92237]: Library not loaded: /opt/homebrew/opt/icu4c/lib/libicui18n.71.dylib
+
+- [x] Create websocket logic for c#
+- [x] Ensure GameState can be deserialised by c#
+- [x] Rework message construction to avoid `String.Format`
+
+Issues with deserialisation:
+UnitCollection expects json object but it's actually an array
+
+Can't use c# `String.Format` when preparing json messages because it gets confused by the `{`s.  
+My current solution looks a bit nasty:
+
+```c#
+public void SendMessageSummon(UnitDefinition unit, DoubledCoord coord) {
+  websocket.SendText(@"{
+    ""type"": """ + MessageTypeOutSummon + @""",
+    ""unitid"": """ + Unit.StringToId(unit.name) + @""",
+    ""coord"": {
+      ""col"": """ + coord.col + @""",
+      ""row"": """ + coord.row + @"""
+    }
+  }");
+}
+```
+
+Think I need a custom solution, and for that either `ISerializable` or perhaps a `JsonConverter`.  
+https://www.newtonsoft.com/json/help/html/SerializationGuide.htm  
+https://www.newtonsoft.com/json/help/html/CustomJsonConverter.htm  
+
+```
+UnityEditor.BuildPlayerWindow+BuildMethodException: 7 errors
+  at UnityEditor.BuildPlayerWindow+DefaultBuildMethods.BuildPlayer (UnityEditor.BuildPlayerOptions options) [0x002ce] in /Users/bokken/build/output/unity/unity/Editor/Mono/BuildPlayerWindowBuildMethods.cs:193 
+  at UnityEditor.BuildPlayerWindow.CallBuildMethods (System.Boolean askForBuildLocation, UnityEditor.BuildOptions defaultBuildOptions) [0x00080] in /Users/bokken/build/output/unity/unity/Editor/Mono/BuildPlayerWindowBuildMethods.cs:94 
+UnityEngine.GUIUtility:ProcessEvent (int,intptr,bool&) (at /Users/bokken/build/output/unity/unity/Modules/IMGUI/GUIUtility.cs:189)
+```
+
+This build failed because I had some editor-only attributes in my main code.  
+You have to either extract these out and into the `./Scripts/Editor` folder, or use `#if UNITY_EDITOR` blocks.
+
+Damn.  
+Can't do this:  
+`AssetDatabase.LoadAssetAtPath<Shader>("Assets/Shaders/BlockColor.shadergraph")`  
+Because the `AssetDatabase` doesn't exist outside editor mode.  
+Best get to refactoring...  
+
+### 19.01.2023 Thursday 6h
+
+Startnig out in Ruka, okay getting this to build on mac.
+
+Got to be careful how you're coding things, some methods only work while running the game from the editor so when you come to build the game a lot of things might need to be changed to allow it to build for your platform. That could be more obvious.
+
+Now I need to change the server to fully support a FIFO queue and a very basic auth pattern. I'm thinking just return a uuid when a websocket connection is made. This id will be associated with whatever they call themselves in the first `login` message. If they want to resume the identity of a previous login, they can pass their old id along with the username and the server will match that up.
+
+If they want to change their name, they simply call rename with their id, current name, and new name.
+
+Here are some tags to help me search this in future:   
+Run multiple copies of the game.  
+Multiple instances.  
+Test multiplayer.  
+Test network.  
+
+- `Edit` > `Project Settings` > `Player` > `Resolution` > `Fullscreen Mode` > `Windowed`
+- `File` > `Build Settings...` > `Build`
+
+`open -n ./Build/Game.app`
+
+Well we have multiplayer, but calling them players is perhaps hyperbole...
+
+![](/uploads/ec3529a8-54df-457a-aaea-b7ecdd6afd74.png)
+
+- [ ] need some kind of login ok/fail response to allow the ui to reflect
+- [ ] kinda confusing how I'm converting between hex/doubled coords. refactor?
+
+PROTIP: You can add multiple prefabs/scriptableobjects to an array in the editor by clicking the inspector lock icon, selecting multiple assets from the project explorer, then dragging all of those on to the title of the property you're trying to set.
+
+Right everything's getting a bit mad here.  
+I have:
+- 3 different types of unitId
+- two game servers (logic)
+- two differing turn state formats
+- three different classes to store unit info
+- be without turn type, fe requiring turn type
+
+Need to clean everything up to actually get this running again.  
+Can I do it in 2hrs?
+
+Okay it's running again, building too.  
+Can't move my summoner.  
+Server coordinates are off now?  
+
+Managed to move p1 summoner 1 space forward over network.  
+p2 didn't get the update.  
+nor does p2 think they're p2.  
+
+Riiight. My original `playerid` message was telling the client if they're p1 or p2. I've changed that to send a uuid for auth. Hmmm. Now I need some kind of gamestart message I suppose.
+
+Skip/finish turn button is not working on osx m1 mac. Why.
+
+OpenGLCore and remove Metal from the list  
+Yeah that breaks
+
+SkipMove/SkipAttack can be combined now that we permit any order.
+
+Decent progress for today.  
+Need to sort remaining health and then a proper game might actually be playable using the external server.
+
+I expect to wrap that up tomorrow, finish cleaning things up, and spend next week bugfixing before handing v0.0.0.0.0.0.1 off.
+
+### 20.01.2023 Friday 6h
+
+- [x] You can select and move the opponent's units. Lawl.
+- [x] You can select your own units not on your turn
+- [x] The energy increase doesn't immediately change when you land on the hex
+- [x] Think "Skip" should be "End Turn"
+- [x] "Spent" units from the draw are not getting the darker overlay
+- [x] Energy details are always showing turn player not actual player
+- [x] p2 overlays also red, looks awful (changed to black, ez)
+- [x] Sometimes p1 summoner hex to the right of starting pos doesn't highlight as a location you can move to
+- [x] updates only occur when switching back to the game
+- [x] P1 should be randomly assigned (choose can come later)
+- [x] we still have "All units attacked, progressing to next turn"
+- [x] opening up 4 connections causes the first game to be overwritten with the second
+
+HUGE progress today.  
+Now I'm stuck on what would probably be quite a simple task for someone with unity knowledge. All I want to do is have a rectangle which expands right, left side anchored in place.
+
+> To scale an object via only one side, you need to be scaling and translating at the same time
+
+Brackeys save me  
+https://www.youtube.com/watch?v=BLfNP4Sc_iA
+
+### 23.01.2023 Monday 7h
+
+Onwards with the final mvp screen: win/lose.  
+That brackeys video showed me exactly what I was looking for.  
+Then I played a bit with layout groups to ensure even spacing between the stats.  
+
+- [x] "game over you won/lost" scren for mvp
+- [x] collect and return game stats on game end
+
+Forgot how to declare maps in typescript:
+
+```ts
+public drawCostDistribution = new Map<number, number>()
+
+const previous = Number(this.drawCostDistribution.get(cost)) || 0
+this.drawCostDistribution.set(cost, previous + 1)
+```
+
+The server keeps refusing to populate the cost distribution data on game end.
+
+Ah that was due to the way I was trying to populate `Map<number, number>` from typescript directly into json.  
+It doesn't like that. Had to create a `const thinglikethis: any = {}` to copy into before calling `JSON.stringify`.
+
+- [x] Enter key to skip turn
+
+Right so I'm onto updating the way we highlight and validate the hexagons a unit can move to.  
+I think this might be the last part of the mvp, apart from updating the images.
+
+I need a simple breadth-first search algo.
+
+Here's one from red blob games in python I can convert into js and c#:
+
+```python
+frontier = Queue()
+frontier.put(start )
+reached = set()
+reached.add(start)
+
+while not frontier.empty():
+   current = frontier.get()
+   for next in graph.neighbors(current):
+      if next not in reached:
+         frontier.put(next)
+         reached.add(next)
+```
+
+Beefed it out a little to include the unit rules of engagement. You can't re-enter the area 1 hex around an enemy that you have already "engaged" - adjacent to at the start of the move.
+
+Also added a rudimentary recursive limit of 10 hexagons because I don't have the "walls" to hand. It runs in an infinite loop otherwise.
+
+```typescript
+const unitAt = (hex: Hex): UnitState|undefined => {
+  return this.boardUnits.find(unit => unit.coord.rdoubledToCube().equals(hex))
+}
+const isEnemy = (unit: UnitState|undefined): boolean => {
+  return unit != undefined && unit.playerIndex != this.turn.playerIndex
+}
+
+const start = unitState.coord.rdoubledToCube()
+
+const engaged: Hex[] = []
+for (let next of start.neighbors()) {
+  if (isEnemy(unitAt(next))) {
+    engaged.push(next)
+  }
+}
+
+const frontier: Hex[] = []
+frontier.push(start)
+const reached: Hex[] = []
+reached.push(start)
+
+while (frontier.length) {
+  const current = frontier.shift()!
+  for (let next of current.neighbors()) {
+    if (next.distance(start) > unit.movement) {
+      continue
+    }
+    if (next.distance(start) > 10) {
+      continue
+    }
+    if (engaged.find(e => e.distance(next) == 1)) {
+      continue
+    }
+    if (!reached.find(r => r.equals(next))) {
+      frontier.push(next)
+      reached.push(next)
+    }
+  }
+}
+```
+
+Now to port that to c#...
+
+Not quite there even with that after an extra hour...
+
+### 24.01.2023 Tuesday 4h
+
+Was using `.Append()` instead of `.Add()`.
+
+```c#
+UnitRenderer UnitAt(Hex hex) {
+  var r = board.GetUnitRenderer(hex);
+  if (r == null || r.unitState == null) {
+    return null;
+  }
+  return r;
+}
+
+bool IsEnemy(UnitRenderer unit) {
+  return unit != null && unit.unitState.playerIndex != _currentPlayerIndex;
+}
+
+UnitRenderer unit = UnitAt(hex);
+
+List<Hex> engaged = new();
+foreach (var next in hex.Neighbors()) {
+  if (IsEnemy(UnitAt(next))) {
+    engaged.Add(next);
+  }
+}
+
+List<Hex> frontier = new();
+frontier.Add(hex);
+List<Hex> reached = new();
+reached.Add(hex);
+
+while (frontier.Count() > 0) {
+  Hex current = frontier.Take(1).ElementAt(0);
+  frontier.RemoveAt(0);
+  foreach (var next in current.Neighbors()) {
+    if (UnitAt(next) != null) {
+      continue;
+    }
+    if (next.Distance(hex) > unit.unitDefinition.speed) {
+      continue;
+    }
+    if (next.Distance(hex) > 10) {
+      continue;
+    }
+    if (engaged.Any(e => e.Distance(next) < 2)) {
+      continue;
+    }
+    if (!reached.Any(r => r.Equals(next))) {
+      frontier.Add(next);
+      reached.Add(next);
+    }
+  }
+}
+
+foreach (Hex h in reached) {
+  board.SetBackgroundHexColor(h, color);
+}
+```
+
+![](/uploads/530d42e6-144e-479e-a8be-5e9ff9558698.png)
+
+Beaut.
+
+- [x] Prevent movement along an enemy hex
+- [x] p1/2 wins indicator not showing
+- [x] Allow fullscreen resolution (with proper resizing??)
+
+So there's this bug at the moment where when you start a new game after finishing a previous game, the previous game state is loaded.
+- [x] Allow for rejoining the queue after a game has finished
+
+Can I build for windows?  
+Yep  
+
+- [x] Test on windows os
+- [x] remove all the redundant code / comments
+- [x] Push all changes to github
+
+v0.0.0.0.1 mvp is out.
 
 
 
