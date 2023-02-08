@@ -2015,5 +2015,151 @@ Yep
 
 v0.0.0.0.1 mvp is out.
 
+### Batch Four
+
+```
+25.01.2023 Wednesday     1h
+31.01.2023 Tuesday       7h
+01.02.2023 Wednesday     3h
+```
+
+### 25.01.2023 Wednesday 1h
+
+Need to get a webgl version of the game up and running.
+
+Need to invoice dash incubator for 6-12 months of digital ocean.
+
+### 31.01.2023 Tuesday 7h
+
+- [x] Start new droplet
+- [x] Install server as docker image
+- [x] Fullscreen toggle on webgl is broken
+
+Had to update the server logic a little so it doesn't hang when socker sends hangup/interrupt/terminate signals.
+
+Fullscreen issues:
+
+![](/uploads/b4ef86a0-49c8-4844-a807-aa3e267e9a72.png)
+
+![](/uploads/44082324-e791-43d2-8459-8fc9e70931d1.png)
+
+I'm finding it difficult to know what to watch in order to update these layouts
+when the resolution changes.
+
+If I watch `Screen.width`, we sometimes can trigger a hex layout update before
+the parent auto layout has had time to recalculate, which means it's
+calculating the same.
+
+If I watch the actual layout, it seems to work well on desktop but very
+unreliably on web.
+
+At the moment it might make more sense for each individual layout to update
+itself when the `RectTransform` changes. It requires a refactor but I think
+that might do the trick.
+
+Ah yes I will need cross-platform containers here.
+
+Oh devops...
+
+### 01.02.2023 Wednesday 3h
+
+`25e80b44d5bf36b0d788ce2ece8af15e2e3c74fa6cb8a6277562472d7cb67267` `./Build/Webgl/Hx/Build/Hx.framework.js.br`
+
+`25e80b44d5bf36b0d788ce2ece8af15e2e3c74fa6cb8a6277562472d7cb67267`
+`/usr/share/nginx/html/Build/Hx.framework.js.br`
+
+Hmm. Well I have both the client and server running on the droplet. The server
+is just js, and the client is served via nginx on port 80 via docker. No nginx
+on raw box.
+
+I considered a reverse proxy but thought this might save time.
+I reserve the right to change my mind.
+Anywawy, getting a bit of a weird error:
+
+> Unable to load file Build/Hx.framework.js.br! Check that the file exists on the remote server. (also check browser Console and Devtools Network tab to debug)
+
+The above checksums match, the file IS in the correct place, with the correct
+unix permissions. The nginx conf HAS been copied over.
+
+Maybe the tar compression is breaking the already compressed files??
+No.
+
+```
+docker exec -it hx-client bash
+curl localhost/Build/Hx.framework.js.br --output test
+sha256sum test
+25e80b44d5bf36b0d788ce2ece8af15e2e3c74fa6cb8a6277562472d7cb67267
+```
+
+So within the box, the curl works fine.
+Within the host...
+Same.
+
+Curl on my machine?
+`25e80b44d5bf36b0d788ce2ece8af15e2e3c74fa6cb8a6277562472d7cb67267`
+
+Well then what the hell?!
+Trying `...data.br`
+
+`c8a2ab7427c907a8841e8be6143996fc0b9334633df47961d8a9b972cbba35cf`
+`c8a2ab7427c907a8841e8be6143996fc0b9334633df47961d8a9b972cbba35cf`
+
+Samesies.
+
+Well I'm going to try the reverse proxy approach.
+Could be an http/https issue perhaps.
+
+Server on `3030`
+Client on `8080`
+Nginx reverse proxy on `80` with certbot ssl
+
+Need to configure this:
+`wss://matchmaking.summoners.gg/ws`
+With nginx reverse proxy websocket upgrade and passthrough.
+
+
+Checking the file can be downloaded correctly:
+```
+echo "$(curl  http://198.211.117.7:8080/Build/Hx.data.br | sha256sum | cut -d ' ' -f 1) ./Build/Webgl/Hx/Build/Hx.data.br" | sha256sum -c
+```
+
+```
+echo "$(curl http://192.168.1.101:8080/Build/Hx.data.br | sha256sum | cut -d ' ' -f 1) ./Build/Webgl/Hx/Build/Hx.data.br" | sha256sum -c
+```
+
+Switched the DNS over to aws.
+DNS check:
+```
+dig -t a play.summoners.gg
+```
+
+Ah `localhost` works fine, but using my LAN IP address breaks with the same error:
+> Unable to load file Build/Hx.framework.js.br! Check that the file exists on the remote server. (also check browser Console and Devtools Network tab to debug)
+
+```
+socat TCP4-LISTEN:7777,fork TCP4:localhost:49316
+```
+
+No can't cheat the unity player localhost binding with `socat`, must actually be
+listening for the `localhost` http header rather than just a ip:port binding.
+Oh well.
+
+I've read on the unity forums that you can rely on the browser cache and that
+unity data cache can cause issues.
+
+Didn't fix.
+Trying gzip instead of brotli compression.
+That did it!
+
+- [x] Delete redundant `dockerhub` repos
+- [x] Install client as docker image
+- [x] Change project export from `ADC Hex Game` to `Summoners`
+- [x] Configure reverse proxy on host with ssl/https
+- [ ] Fix main menu `exit` on browser - I tried using a `jslib` and failed. It works on localhost, not on production. Go figure.
+- [x] Add `(Enter)` to end turn button to explain that control
+
+
+
+
 
 
